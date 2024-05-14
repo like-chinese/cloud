@@ -1,8 +1,12 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 include 'components/connect.php';
 
 session_start();
+
+$message = []; // Initialize $message as an array
 
 if(isset($_SESSION['user_id'])){
    $user_id = $_SESSION['user_id'];
@@ -12,38 +16,34 @@ if(isset($_SESSION['user_id'])){
 
 if(isset($_POST['submit'])){
    $id = $_POST['id'];
-   $id = filter_var($id, FILTER_SANITIZE_STRING);
    $name = $_POST['name'];
-   $name = filter_var($name, FILTER_SANITIZE_STRING);
    $email = $_POST['email'];
-   $email = filter_var($email, FILTER_SANITIZE_STRING);
    $number = $_POST['number'];
-   $number = filter_var($number, FILTER_SANITIZE_STRING);
    $pass = sha1($_POST['pass']);
-   $pass = filter_var($pass, FILTER_SANITIZE_STRING);
    $cpass = sha1($_POST['cpass']);
-   $cpass = filter_var($cpass, FILTER_SANITIZE_STRING);
 
-   $select_user = $conn->prepare("SELECT * FROM `users` WHERE email = ? OR number = ? OR id = ?" );
-   $select_user->execute([$email, $number,$id]);
-   $row = $select_user->fetch(PDO::FETCH_ASSOC);
+   $sql="SELECT * FROM `users` WHERE  `id` = '$id'";
+   $select_user =  $conn->query($sql);
 
-   if($select_user->rowCount() > 0){
-      $message[] = 'the id or email or  number already exists!';
-   }else{
+   
+   if ($select_user->num_rows > 0) {
+      $message[] = 'The id already exists!'; // Push message into the array
+  }else{
       if($pass != $cpass){
-         $message[] = 'confirm password not matched!';
+          $message[] = 'Confirm password not matched!'; // Push message into the array
       }else{
-         $insert_user = $conn->prepare("INSERT INTO `users`(id, name, email, number, password) VALUES(?,?,?,?,?)");
-         $insert_user->execute([$id, $name, $email, $number, $cpass]);
+         $sql="INSERT INTO `users`(`id`, `name`, `email`, `number`, `password`) VALUES('$id', '$name', '$email', '$number', '$cpass')";
+         $insert_user = $conn->query($sql);
 
-         $select_user = $conn->prepare("SELECT * FROM `users` WHERE email = ? AND password = ?");
-         $select_user->execute([$email, $pass]);
-         $row = $select_user->fetch(PDO::FETCH_ASSOC);
-         if($select_user->rowCount() > 0){
-            $_SESSION['user_id'] = $row['id'];
-            header('location:index.php');
-         }
+         $sql="SELECT * FROM `users` WHERE `email` = '$email' AND `password` = '$pass'";
+         $select_user =  $conn->query($sql);
+        
+        
+         if ($select_user->num_rows > 0) {
+    $row = $select_user->fetch_assoc();
+    $_SESSION['user_id'] = $row['id']; // Get the id from the fetched row
+    header('location:index.php');
+}
       }
    }
 
@@ -58,9 +58,6 @@ if(isset($_POST['submit'])){
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>register</title>
-
-   <!-- font awesome cdn link  
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">  -->
 
    <!-- custom css file link  -->
    <link rel="stylesheet" href="css/style.css">
@@ -77,9 +74,7 @@ if(isset($_POST['submit'])){
 <body>
    
 <!-- header section starts  -->
-<!--
-<?php include 'components/user_header.php'; ?>
--->
+
 <!-- header section ends -->
 
 <section class="form-container">
@@ -93,31 +88,12 @@ if(isset($_POST['submit'])){
       <input type="password" name="pass" required placeholder="enter your password" class="box" maxlength="50" oninput="this.value = this.value.replace(/\s/g, '')">
       <input type="password" name="cpass" required placeholder="confirm your password" class="box" maxlength="50" oninput="this.value = this.value.replace(/\s/g, '')">
       <input type="submit" value="register now" name="submit" class="btn">
+      <p><?php foreach ($message as $msg) { echo $msg . '<br>'; } ?></p> <!-- Display each message in the array -->
       <p>already have an account? <a href="login.php">login now</a></p>
    </form>
 
 </section>
 
-
-
-
-
-
-
-
-
-
-<!--
-<?php include 'components/footer.php'; ?>
--->
-
-
-
-
-
-
-<!-- custom js file link  -->
-<script src="js/script.js"></script>
-
 </body>
 </html>
+

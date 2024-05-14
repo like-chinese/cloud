@@ -45,7 +45,7 @@ if(isset($_SESSION['user_id'])){
    <div class="row">
 
       <div class="image">
-         <img src="images/branch head.png" alt="">
+         <img src="images/Branch Head.png" alt="">
       </div>
 
       <div class="content" >

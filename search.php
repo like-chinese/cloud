@@ -1,5 +1,6 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include 'components/connect.php';
 
 session_start();
@@ -39,7 +40,7 @@ include 'components/add_cart.php';
 
 <section class="search-form">
    <form method="post" action="">
-      <input type="text" name="search_box" placeholder="search here..." class="box" style="border: 2px solid black;">
+      <input type="text" name="search_box" placeholder="search here..." class="box" style="border: 2px solid black;color:black;">
       <button type="submit" name="search_btn" class="fas fa-search"><img src="project images/search.png"></button>
    </form>
 </section>
@@ -53,11 +54,14 @@ include 'components/add_cart.php';
 
       <?php
          if(isset($_POST['search_box']) OR isset($_POST['search_btn'])){
-         $search_box = $_POST['search_box'];
-         $select_products = $conn->prepare("SELECT * FROM `products` WHERE name LIKE '%{$search_box}%'");
-         $select_products->execute();
-         if($select_products->rowCount() > 0){
-            while($fetch_products = $select_products->fetch(PDO::FETCH_ASSOC)){
+       
+  $search_box = $_POST['search_box'];
+     $sql="SELECT * FROM `products` WHERE `name` LIKE '%{$search_box}%'";
+         
+	    $result = $conn->query($sql);
+
+    if ($result->num_rows > 0) {
+        while ($fetch_products = $result->fetch_assoc()) {
       ?>
       <form action="" method="post" class="box">
          <input type="hidden" name="pid" value="<?= $fetch_products['id']; ?>">

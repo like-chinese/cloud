@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 include 'components/connect.php';
 
@@ -37,11 +39,21 @@ include 'components/add_cart.php';
 
    <?php
       $pid = $_GET['pid'];
-      $select_products = $conn->prepare("SELECT * FROM `products` WHERE id = ?");
-      $select_products->execute([$pid]);
-      if($select_products->rowCount() > 0){
-         while($fetch_products = $select_products->fetch(PDO::FETCH_ASSOC)){
-   ?>
+  //    $select_products = $conn->prepare("SELECT * FROM `products` WHERE id = ?");
+    //  $select_products->execute([$pid]);
+//$result = $select_products->get_result(); 
+  //    if($select_products->rowCount() > 0){
+    
+$select_products = $conn->prepare("SELECT * FROM `products` WHERE id = ?");
+      $select_products->bind_param("i", $pid);
+      $select_products->execute();
+      $result = $select_products->get_result(); 
+      
+      if($result->num_rows > 0){
+
+//     while($fetch_products = $select_products->fetch(PDO::FETCH_ASSOC)){
+while ($fetch_products = $result->fetch_assoc()) {  
+ ?>
    <form action="" method="post" class="box">
       <input type="hidden" name="pid" value="<?= $fetch_products['id']; ?>">
       <input type="hidden" name="name" value="<?= $fetch_products['name']; ?>">

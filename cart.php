@@ -1,37 +1,63 @@
 <?php
 
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 include 'components/connect.php';
 
 session_start();
+
+$user_id = '';
+$message = []; // Removed unnecessary square brackets
 
 if(isset($_SESSION['user_id'])){
    $user_id = $_SESSION['user_id'];
 }else{
    $user_id = '';
-   header('location:login.php');  //header('location:index.php');
-};
+   header('location:login.php');
+   exit; // Added exit after header redirect
+} 
 
 if(isset($_POST['delete'])){
    $cart_id = $_POST['cart_id'];
-   $delete_cart_item = $conn->prepare("DELETE FROM `cart` WHERE id = ?");
-   $delete_cart_item->execute([$cart_id]);
-   $message[] = 'cart item deleted!';
+
+   $sql="DELETE FROM `cart` WHERE `id` ='$cart_id' "; // Replaced single quotes with backticks
+
+   $delete_cart_item = $conn->query($sql);
+   
+   if($delete_cart_item === TRUE){ // Corrected variable name
+      $message[] = 'Cart item deleted!';
+   }else{
+      $message[] = 'Error deleting cart item!';
+   }
 }
 
 if(isset($_POST['delete_all'])){
-   $delete_cart_item = $conn->prepare("DELETE FROM `cart` WHERE user_id = ?");
-   $delete_cart_item->execute([$user_id]);
-   // header('location:cart.php');
-   $message[] = 'deleted all from cart!';
+   $sql="DELETE FROM `cart` WHERE `user_id` ='$user_id' ";
+   $delete_cart_item = $conn->query($sql);
+   
+   if($delete_cart_item === TRUE){ // Corrected variable name
+      $message[] = 'Deleted all items from cart!';
+   }else{
+      $message[] = 'Error deleting all items from cart!';
+   }
 }
 
 if(isset($_POST['update_qty'])){
    $cart_id = $_POST['cart_id'];
-   $qty = $_POST['qty'];
-   $qty = filter_var($qty, FILTER_SANITIZE_STRING);
-   $update_qty = $conn->prepare("UPDATE `cart` SET quantity = ? WHERE id = ?");
-   $update_qty->execute([$qty, $cart_id]);
-   $message[] = 'cart quantity updated';
+   $qty = intval($_POST['qty']); 
+   if($qty > 0){
+      $sql="UPDATE `cart` SET `quantity` ='$qty' WHERE `id` = '$cart_id'"; // Replaced single quotes with backticks
+      $update_qty = $conn->query($sql); 
+     
+      if ($update_qty === TRUE) { // Corrected variable name
+         $message[] = 'Cart quantity updated';
+      }else{
+         $message[] = 'Error updating cart quantity!';
+      }
+   }else{
+      $message[] = 'Error preparing update quantity statement!';
+   }
 }
 
 $grand_total = 0;
@@ -73,13 +99,17 @@ $grand_total = 0;
 
    <div class="box-container">
 
-      <?php
-         $grand_total = 0;
-         $select_cart = $conn->prepare("SELECT * FROM `cart` WHERE user_id = ?");
-         $select_cart->execute([$user_id]);
-         if($select_cart->rowCount() > 0){
-            while($fetch_cart = $select_cart->fetch(PDO::FETCH_ASSOC)){
-      ?>
+<?php
+$grand_total = 0;
+$select_cart = $conn->prepare("SELECT * FROM `cart` WHERE user_id = ?");
+$select_cart->bind_param("s", $user_id);
+$select_cart->execute();
+$result = $select_cart->get_result();  // Get the result object from the executed statement
+
+if ($result->num_rows > 0) {
+    while ($fetch_cart = $result->fetch_assoc()) {  // Fetch each row as an associative array
+?>
+
       <form action="" method="post" class="box">
          <input type="hidden" name="cart_id" value="<?= $fetch_cart['id']; ?>">
          <a href="quick_view.php?pid=<?= $fetch_cart['pid']; ?>"  class="fas fa-eye"><img src="project images/eye.png" style="height:43px;"></a>

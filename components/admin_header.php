@@ -4,7 +4,7 @@ if(isset($message)){
       echo '
       <div class="message">
          <span>'.$message.'</span>
-         <i class="fas fa-times" onclick="this.parentElement.remove();"><img src="project images/delete.png" style="height:43px;"></i>
+         <i class="fas fa-times" onclick="this.parentElement.remove();"><img src="../project images/delete.png" style="height:43px;"></i>
       </div>
       ';
    }
@@ -33,10 +33,23 @@ if(isset($message)){
 
       <div class="profile">
          <?php
-            $select_profile = $conn->prepare("SELECT * FROM `admin` WHERE id = ?");
-            $select_profile->execute([$admin_id]);
-            $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
-         ?>
+$select_profile = $conn->prepare("SELECT * FROM `admin` WHERE id = ?");
+$select_profile->bind_param("i", $admin_id); // Bind the parameter
+$select_profile->execute();
+$result_profile = $select_profile->get_result(); // Get the result set
+
+if ($result_profile->num_rows > 0) {
+    $fetch_profile = $result_profile->fetch_assoc(); // Fetch the result as an associative array
+    echo "<p>".$fetch_profile['name']."</p>";
+} else {
+    echo "Profile not found.";
+}
+
+// Free the result set
+$result_profile->free();
+?>
+
+
          <p><?= $fetch_profile['name']; ?></p>
          <a href="update_profile.php" class="btn">update profile</a>
          <div class="flex-btn">

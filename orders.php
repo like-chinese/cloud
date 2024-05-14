@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 include 'components/connect.php';
 
@@ -49,10 +51,13 @@ if(isset($_SESSION['user_id'])){
       if($user_id == ''){
          echo '<p class="empty">please login to see your orders</p>';
       }else{
-         $select_orders = $conn->prepare("SELECT * FROM `orders` WHERE user_id = ?");
-         $select_orders->execute([$user_id]);
-         if($select_orders->rowCount() > 0){
-            while($fetch_orders = $select_orders->fetch(PDO::FETCH_ASSOC)){
+         $sql="SELECT * FROM `orders` WHERE `user_id` = '$user_id'";
+         $select_orders = $conn->query($sql);
+
+         if($select_orders->num_rows > 0){
+        while($fetch_orders = $select_orders->fetch_assoc()){ // Use fetch_assoc() instead of fetch(PDO::FETCH_ASSOC)
+            
+ //while($fetch_orders = $select_orders->fetch(PDO::FETCH_ASSOC)){
    ?>
    <div class="box">
       <p>placed on : <span><?= $fetch_orders['placed_on']; ?></span></p>

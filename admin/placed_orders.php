@@ -1,32 +1,35 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include '../components/connect.php';
 
 session_start();
 
 $admin_id = $_SESSION['admin_id'];
 
-if(!isset($admin_id)){
+if (!isset($admin_id)) {
    header('location:admin_login.php');
-};
+   exit(); // Ensure script stops executing after redirection
+}
 
-if(isset($_POST['update_payment'])){
-
+if (isset($_POST['update_payment'])) {
    $order_id = $_POST['order_id'];
    $payment_status = $_POST['payment_status'];
-   $update_status = $conn->prepare("UPDATE `orders` SET payment_status = ? WHERE id = ?");
-   $update_status->execute([$payment_status, $order_id]);
-   $message[] = 'payment status updated!';
 
+   $sql="UPDATE `orders` SET `payment_status` = '$payment_status' WHERE `id` = '$order_id'";
+   $update_status = $conn->query($sql);
+      
+
+   $message[] = 'Payment status updated!';
 }
 
-if(isset($_GET['delete'])){
+if (isset($_GET['delete'])) {
    $delete_id = $_GET['delete'];
-   $delete_order = $conn->prepare("DELETE FROM `orders` WHERE id = ?");
-   $delete_order->execute([$delete_id]);
+
+   $sql="DELETE FROM `orders` WHERE `id` = '$delete_id'";
+   $delete_order =  $conn->query($sql);
    header('location:placed_orders.php');
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -36,10 +39,6 @@ if(isset($_GET['delete'])){
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>placed orders</title>
-
-   <!-- font awesome cdn link 
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
- -->
 
    <!-- custom css file link  -->
    <link rel="stylesheet" href="../css/admin_style.css">
@@ -58,10 +57,11 @@ if(isset($_GET['delete'])){
    <div class="box-container">
 
    <?php
-      $select_orders = $conn->prepare("SELECT * FROM `orders`");
-      $select_orders->execute();
-      if($select_orders->rowCount() > 0){
-         while($fetch_orders = $select_orders->fetch(PDO::FETCH_ASSOC)){
+   $sql="SELECT * FROM `orders`";
+      $select_orders = $conn->query($sql);
+      
+      if ($select_orders->num_rows > 0) {
+         while ($fetch_orders = $select_orders->fetch_assoc()) {
    ?>
    <div class="box">
       <p> user id : <span><?= $fetch_orders['user_id']; ?></span> </p>
@@ -87,10 +87,10 @@ if(isset($_GET['delete'])){
       </form>
    </div>
    <?php
+         }
+      } else {
+         echo '<p class="empty">no orders placed yet!</p>';
       }
-   }else{
-      echo '<p class="empty">no orders placed yet!</p>';
-   }
    ?>
 
    </div>
@@ -99,16 +99,9 @@ if(isset($_GET['delete'])){
 
 <!-- placed orders section ends -->
 
-
-
-
-
-
-
-
-
 <!-- custom js file link  -->
 <script src="../js/admin_script.js"></script>
 
 </body>
 </html>
+

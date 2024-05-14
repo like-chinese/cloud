@@ -1,5 +1,6 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include 'components/connect.php';
 
 session_start();
@@ -9,38 +10,33 @@ if(isset($_SESSION['user_id'])){
 }else{
    $user_id = '';
    header('location:index.php');
+   exit;
 };
 
 if(isset($_POST['submit'])){
 
    $name = $_POST['name'];
-   $name = filter_var($name, FILTER_SANITIZE_STRING);
    $number = $_POST['number'];
-   $number = filter_var($number, FILTER_SANITIZE_STRING);
    $email = $_POST['email'];
-   $email = filter_var($email, FILTER_SANITIZE_STRING);
    $method = $_POST['method'];
-   $method = filter_var($method, FILTER_SANITIZE_STRING);
    $address = $_POST['address'];
-   $address = filter_var($address, FILTER_SANITIZE_STRING);
    $total_products = $_POST['total_products'];
    $total_price = $_POST['total_price'];
 
-   $check_cart = $conn->prepare("SELECT * FROM `cart` WHERE user_id = ?");
-   $check_cart->execute([$user_id]);
+   $sql="SELECT * FROM `cart` WHERE user_id = '$user_id'";
+   $check_cart = $conn->query($sql);
 
-   if($check_cart->rowCount() > 0){
+   if($check_cart->num_rows > 0){
 
       if($address == ''){
          $message[] = 'please add your address!';
       }else{
+         $sql="INSERT INTO `orders`(user_id, name, number, email, method, address, total_products, total_price) VALUES('$user_id', '$name', '$number', '$email', '$method', '$address', '$total_products', '$total_price')";
+         $insert_order = $conn->query($sql);
+
+         $sql="DELETE FROM `cart` WHERE user_id = '$user_id'";
+         $delete_cart = $conn->query($sql);
          
-         $insert_order = $conn->prepare("INSERT INTO `orders`(user_id, name, number, email, method, address, total_products, total_price) VALUES(?,?,?,?,?,?,?,?)");
-         $insert_order->execute([$user_id, $name, $number, $email, $method, $address, $total_products, $total_price]);
-
-         $delete_cart = $conn->prepare("DELETE FROM `cart` WHERE user_id = ?");
-         $delete_cart->execute([$user_id]);
-
          $message[] = 'order placed successfully!';
       }
       
@@ -51,6 +47,10 @@ if(isset($_POST['submit'])){
 }
 
 ?>
+
+
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -84,13 +84,15 @@ if(isset($_POST['submit'])){
 
    <div class="cart-items">
       <h3>cart items</h3>
-      <?php
+        <?php
          $grand_total = 0;
-         $cart_items[] = '';
-         $select_cart = $conn->prepare("SELECT * FROM `cart` WHERE user_id = ?");
-         $select_cart->execute([$user_id]);
-         if($select_cart->rowCount() > 0){
-            while($fetch_cart = $select_cart->fetch(PDO::FETCH_ASSOC)){
+         $cart_items = array(); // Removed unnecessary initialization
+         $sql="SELECT * FROM `cart` WHERE user_id = '$user_id'";
+         $select_cart = $conn->query($sql);
+      
+         if($select_cart->num_rows  > 0){
+             while ($fetch_cart = $select_cart->fetch_assoc()) { // Corrected here
+    
                $cart_items[] = $fetch_cart['name'].' ('.$fetch_cart['price'].' x '. $fetch_cart['quantity'].') - ';
                $total_products = implode($cart_items);
                $grand_total += ($fetch_cart['price'] * $fetch_cart['quantity']);

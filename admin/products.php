@@ -1,64 +1,92 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include '../components/connect.php';
 
 session_start();
 
 $admin_id = $_SESSION['admin_id'];
-$category = isset($_GET['category']) ? filter_var($_GET['category'], FILTER_SANITIZE_STRING) : null;
+$category = isset($_GET['category']) ? $_GET['category'] : null;
 
-
-if(!isset($admin_id)){
+if (!isset($admin_id)) {
    header('location:admin_login.php');
-};
+   exit(); // Ensure script stops executing after redirection
+}
 
-if(isset($_POST['add_product'])){
+if (isset($_POST['add_product'])) {
 
    $name = $_POST['name'];
-   $name = filter_var($name, FILTER_SANITIZE_STRING);
    $price = $_POST['price'];
-   $price = filter_var($price, FILTER_SANITIZE_STRING);
    $category = $_POST['category'];
-   $category = filter_var($category, FILTER_SANITIZE_STRING);
+
 
    $image = $_FILES['image']['name'];
-   $image = filter_var($image, FILTER_SANITIZE_STRING);
+  
    $image_size = $_FILES['image']['size'];
    $image_tmp_name = $_FILES['image']['tmp_name'];
    $image_folder = '../uploaded_img/'.$image;
 
-   $select_products = $conn->prepare("SELECT * FROM `products` WHERE name = ?");
-   $select_products->execute([$name]);
 
-   if($select_products->rowCount() > 0){
-      $message[] = 'product name already exists!';
-   }else{
-      if($image_size > 2000000){
-         $message[] = 'image size is too large';
-      }else{
+   $sql="SELECT * FROM `products` WHERE name = '$name'";
+   $select_products = $conn->query($sql);
+  
+   
+   if ($select_products->num_rows > 0) {
+      $message[] = 'Product name already exists!';
+   } else {
+      if ($image_size > 2000000) {
+         $message[] = 'Image size is too large';
+      } else {
          move_uploaded_file($image_tmp_name, $image_folder);
 
-         $insert_product = $conn->prepare("INSERT INTO `products`(name, category, price, image) VALUES(?,?,?,?)");
-         $insert_product->execute([$name, $category, $price, $image]);
 
-         $message[] = 'new product added!';
+         $sql="INSERT INTO `products`(`name`, `category`, `price`, `image`) VALUES('$name','$category','$price','$image')";
+         $insert_product = $conn->query($sql);
+      
+
+         $message[] = 'New product added!';
       }
 
    }
 
 }
 
-if(isset($_GET['delete'])){
+
+
+
+
+
+
+
+
+
+
+if (isset($_GET['delete'])) {
 
    $delete_id = $_GET['delete'];
-   $delete_product_image = $conn->prepare("SELECT * FROM `products` WHERE id = ?");
-   $delete_product_image->execute([$delete_id]);
-   $fetch_delete_image = $delete_product_image->fetch(PDO::FETCH_ASSOC);
+
+   // Select product image
+   $sql = "SELECT * FROM `products` WHERE `id` = ?";
+   $select_product_image = $conn->prepare($sql);
+   $select_product_image->bind_param('i', $delete_id);
+   $select_product_image->execute();
+   $delete_product_image = $select_product_image->get_result();
+   
+   $fetch_delete_image = $delete_product_image->fetch_assoc();
    unlink('../uploaded_img/'.$fetch_delete_image['image']);
-   $delete_product = $conn->prepare("DELETE FROM `products` WHERE id = ?");
-   $delete_product->execute([$delete_id]);
-   $delete_cart = $conn->prepare("DELETE FROM `cart` WHERE pid = ?");
-   $delete_cart->execute([$delete_id]);
+
+   // Delete product
+   $sql = "DELETE FROM `products` WHERE `id` = ?";
+   $delete_product = $conn->prepare($sql);
+   $delete_product->bind_param('i', $delete_id);
+   $delete_product->execute();
+
+   // Delete related cart items
+   $sql = "DELETE FROM `cart` WHERE `pid` = ?";
+   $delete_cart = $conn->prepare($sql);
+   $delete_cart->bind_param('i', $delete_id);
+   $delete_cart->execute();
+   
    header('location:products.php');
 
 }
@@ -74,10 +102,6 @@ if(isset($_GET['delete'])){
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>products</title>
-
-   <!-- font awesome cdn link  
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
--->
 
    <!-- custom css file link  -->
    <link rel="stylesheet" href="../css/admin_style.css">
@@ -100,7 +124,7 @@ if(isset($_GET['delete'])){
          <option value="" disabled selected>select category --</option>
          <option value="flower">Flower</option>
          <option value="balloon">Balloon</option>
-         <option value="bear">bear</option>
+         <option value="bear">Bear</option>
          <option value="others">Others</option>
       </select>
       <input type="file" name="image" class="box" accept="image/jpg, image/jpeg, image/png, image/webp" required>
@@ -111,7 +135,7 @@ if(isset($_GET['delete'])){
 
 <!-- add products section ends -->
 
-<!--Show the category -->
+<!-- Show the category -->
 <section class="category">
    <h1 class="title">Product Categories</h1>
    <div class="box-container">
@@ -134,8 +158,8 @@ if(isset($_GET['delete'])){
    </div>
 </section>
 
+<!-- Show the ends part of the category -->
 
-<!--The ends part of the category-->
 <!-- show products section starts  -->
 
 <section class="show-products" style="padding-top: 0;">
@@ -143,20 +167,17 @@ if(isset($_GET['delete'])){
    <div class="box-container">
 
    <?php
-      $show_products_sql = "SELECT * FROM `products`";
-      $params = [];
+  
+      $category_clause = ($category) ? "WHERE category = '$category'" : ""; // 构建分类条件
+      $sql = "SELECT * FROM `products` $category_clause"; // 构建完整的 SQL 查询
       
-      if ($category) {
-          $show_products_sql .= " WHERE category = ?";
-          $params[] = $category;
-      }
+      $show_products = $conn->query($sql); // 执行查询
       
-      $show_products = $conn->prepare($show_products_sql);
-      $show_products->execute($params);
-      
-      if($show_products->rowCount() > 0){
-         while($fetch_products = $show_products->fetch(PDO::FETCH_ASSOC)){  
-   ?>
+      // 处理结果
+      if ($show_products->num_rows > 0) {
+       //  while ($fetch_products = $show_products->fetch(PDO::FETCH_ASSOC)) {  
+	while ($fetch_products = $show_products->fetch_assoc()) {  
+ ?>
    <div class="box">
       <img src="../uploaded_img/<?= $fetch_products['image']; ?>" alt="">
       <div class="flex">
@@ -171,7 +192,7 @@ if(isset($_GET['delete'])){
    </div>
    <?php
          }
-      }else{
+      } else {
          echo '<p class="empty">no products added yet!</p>';
       }
    ?>
@@ -182,17 +203,9 @@ if(isset($_GET['delete'])){
 
 <!-- show products section ends -->
 
-
-
-
-
-
-
-
-
-
 <!-- custom js file link  -->
 <script src="../js/admin_script.js"></script>
 
 </body>
 </html>
+

@@ -1,4 +1,10 @@
+
+
+
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 
 include 'components/connect.php';
 
@@ -104,7 +110,9 @@ include 'components/add_cart.php';
 }
 </style>
 
+
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
    <meta charset="UTF-8">
@@ -205,11 +213,21 @@ include 'components/add_cart.php';
    <div class="box-container">
 
       <?php
-         $select_products = $conn->prepare("SELECT * FROM `products` LIMIT 6");
-         $select_products->execute();
-         if($select_products->rowCount() > 0){
-            while($fetch_products = $select_products->fetch(PDO::FETCH_ASSOC)){
-      ?>
+//         $select_products = $conn->prepare("SELECT * FROM `products` LIMIT 6");
+  //       $select_products->execute();
+   //      if($select_products->rowCount() > 0){
+     //       while($fetch_products = $select_products->fetch(PDO::FETCH_ASSOC)){
+
+$select_products = $conn->prepare("SELECT * FROM `products` LIMIT 6");
+$select_products->execute();
+$result = $select_products->get_result(); 
+
+if($result->num_rows > 0){
+   
+   while($fetch_products = $result->fetch_assoc()){
+     
+
+ ?>
       <form action="" method="post" class="box">
          <input type="hidden" name="pid" value="<?= $fetch_products['id']; ?>">
          <input type="hidden" name="name" value="<?= $fetch_products['name']; ?>">

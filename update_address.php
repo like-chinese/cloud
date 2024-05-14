@@ -1,4 +1,6 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 include 'components/connect.php';
 
@@ -12,17 +14,21 @@ if(isset($_SESSION['user_id'])){
 };
 
 if(isset($_POST['submit'])){
-
    $address = $_POST['flat'] .', '.$_POST['building'].', '.$_POST['area'].', '.$_POST['town'] .', '. $_POST['city'] .', '. $_POST['state'] .', '. $_POST['country'] .' - '. $_POST['pin_code'];
-   $address = filter_var($address, FILTER_SANITIZE_STRING);
+ 
 
-   $update_address = $conn->prepare("UPDATE `users` set address = ? WHERE id = ?");
-   $update_address->execute([$address, $user_id]);
-
-   $message[] = 'address saved!';
-
+   // Prepare and execute the update statement
+   $sql="UPDATE `users` SET `address` = '$address' WHERE `id` = '$user_id'";
+   $update_address =$conn->query($sql);
+   
+   
+   if ($update_address == TRUE) { // Corrected variable name
+      $message[] = 'Address saved!';
+      header('location:profile.php');
+   }else{
+      $message[] = 'Error saving address!';
+   }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -57,7 +63,7 @@ if(isset($_POST['submit'])){
       <input type="text" class="box" placeholder="country name" required maxlength="50" name="country">
       <input type="number" class="box" placeholder="pin code" required max="999999" min="1" maxlength="6" name="pin_code">
       <input type="submit" value="save address" name="submit" class="btn">
-   </form>
+  s </form>
 
 </section>
 

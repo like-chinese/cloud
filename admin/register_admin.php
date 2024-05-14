@@ -1,36 +1,38 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include '../components/connect.php';
 
 session_start();
 
 $admin_id = $_SESSION['admin_id'];
 
-if(!isset($admin_id)){
+if (!isset($admin_id)) {
    header('location:admin_login.php');
-};
+}
 
-if(isset($_POST['submit'])){
+if (isset($_POST['submit'])) {
 
    $name = $_POST['name'];
-   $name = filter_var($name, FILTER_SANITIZE_STRING);
    $pass = sha1($_POST['pass']);
-   $pass = filter_var($pass, FILTER_SANITIZE_STRING);
    $cpass = sha1($_POST['cpass']);
-   $cpass = filter_var($cpass, FILTER_SANITIZE_STRING);
 
-   $select_admin = $conn->prepare("SELECT * FROM `admin` WHERE name = ?");
-   $select_admin->execute([$name]);
+   $sql="SELECT * FROM `admin` WHERE `name` = $name";
+   $select_admin = $conn->query($sql);
+
    
-   if($select_admin->rowCount() > 0){
-      $message[] = 'username already exists!';
-   }else{
-      if($pass != $cpass){
-         $message[] = 'confirm passowrd not matched!';
-      }else{
-         $insert_admin = $conn->prepare("INSERT INTO `admin`(name, password) VALUES(?,?)");
-         $insert_admin->execute([$name, $cpass]);
-         $message[] = 'new admin registered!';
+   if ($select_admin->num_rows > 0) {
+      $message[] = 'Username already exists!';
+   } else {
+      if ($pass != $cpass) {
+         $message[] = 'Confirm password does not match!';
+      } else {
+
+         $sql="INSERT INTO `admin`(`name`, `password`) VALUES('$name','$cpass,')";
+         $insert_admin = $conn->query($sql);
+
+   
+         $message[] = 'New admin registered!';
       }
    }
 
@@ -45,10 +47,6 @@ if(isset($_POST['submit'])){
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>register</title>
-
-   <!-- font awesome cdn link 
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
- -->
 
    <!-- custom css file link  -->
    <link rel="stylesheet" href="../css/admin_style.css">
@@ -74,23 +72,9 @@ if(isset($_POST['submit'])){
 
 <!-- register admin section ends -->
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!-- custom js file link  -->
 <script src="../js/admin_script.js"></script>
 
 </body>
 </html>
+

@@ -83,11 +83,21 @@ include 'components/add_cart.php';
    <div class="box-container">
 
       <?php
-         $select_products = $conn->prepare("SELECT * FROM `products`");
+//         $select_products = $conn->prepare("SELECT * FROM `products`");
+  //       $select_products->execute();
+   //      if($select_products->rowCount() > 0){
+     //       while($fetch_products = $select_products->fetch(PDO::FETCH_ASSOC)){
+     
+  $select_products = $conn->prepare("SELECT * FROM `products` ");
          $select_products->execute();
-         if($select_products->rowCount() > 0){
-            while($fetch_products = $select_products->fetch(PDO::FETCH_ASSOC)){
-      ?>
+         $result = $select_products->get_result(); 
+         
+      
+         if($result->num_rows > 0){
+            
+            while($fetch_products = $result->fetch_assoc()){
+
+ ?>
       <form action="" method="post" class="box">
          <input type="hidden" name="pid" value="<?= $fetch_products['id']; ?>">
          <input type="hidden" name="name" value="<?= $fetch_products['name']; ?>">

@@ -1,22 +1,25 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include '../components/connect.php';
 
 session_start();
 
 $admin_id = $_SESSION['admin_id'];
 
-if(!isset($admin_id)){
-   header('location:admin_login.php');
+if (!isset($admin_id)) {
+    header('location:admin_login.php');
+    exit(); // Ensure script stops executing after redirection
 }
 
-if(isset($_GET['delete'])){
-   $delete_id = $_GET['delete'];
-   $delete_message = $conn->prepare("DELETE FROM `messages` WHERE id = ?");
-   $delete_message->execute([$delete_id]);
-   header('location:messages.php');
-}
+if (isset($_GET['delete'])) {
+    $delete_id = $_GET['delete'];
 
+    $sql="DELETE FROM `messages` WHERE id = '$delete_id'";
+    $delete_message =  $conn->query($sql);
+
+    header('location:messages.php');
+}
 ?>
 
 <!DOCTYPE html>
@@ -27,13 +30,8 @@ if(isset($_GET['delete'])){
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>messages</title>
 
-   <!-- font awesome cdn link  
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
--->
-
    <!-- custom css file link  -->
    <link rel="stylesheet" href="../css/admin_style.css">
-
 </head>
 <body>
 
@@ -48,10 +46,11 @@ if(isset($_GET['delete'])){
    <div class="box-container">
 
    <?php
-      $select_messages = $conn->prepare("SELECT * FROM `messages`");
-      $select_messages->execute();
-      if($select_messages->rowCount() > 0){
-         while($fetch_messages = $select_messages->fetch(PDO::FETCH_ASSOC)){
+      $sql="SELECT * FROM `messages`";
+      $select_messages = $conn->query($sql);
+      
+      if ($select_messages->num_rows > 0) {
+         while ($fetch_messages = $select_messages->fetch_assoc()) {
    ?>
    <div class="box">
       <p> name : <span><?= $fetch_messages['name']; ?></span> </p>
@@ -62,7 +61,7 @@ if(isset($_GET['delete'])){
    </div>
    <?php
          }
-      }else{
+      } else {
          echo '<p class="empty">you have no messages</p>';
       }
    ?>
@@ -73,16 +72,9 @@ if(isset($_GET['delete'])){
 
 <!-- messages section ends -->
 
-
-
-
-
-
-
-
-
 <!-- custom js file link  -->
 <script src="../js/admin_script.js"></script>
 
 </body>
 </html>
+

@@ -1,5 +1,6 @@
 <?php
-
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 include 'components/connect.php';
 
 session_start();
@@ -71,13 +72,19 @@ include 'components/add_cart.php';
    <div class="box-container">
 
       <?php
-         $category = $_GET['category'];
-         $select_products = $conn->prepare("SELECT * FROM `products` WHERE category = ?");
-         $select_products->execute([$category]);
-         if($select_products->rowCount() > 0){
-            while($fetch_products = $select_products->fetch(PDO::FETCH_ASSOC)){
-      ?>
-      <form action="" method="post" class="box">
+
+       $category = $_GET['category'] ; // Get category parameter
+         $sql="SELECT * FROM `products` WHERE `category` = '$category' "; // Replace single quotes with backticks
+         $select_products = $conn->query($sql);
+       
+          if ($select_products->num_rows > 0) { // Check if there are any rows returned
+        while ($fetch_products = $select_products->fetch_assoc()) {
+
+
+
+
+ ?>
+     <form action="" method="post" class="box">
          <input type="hidden" name="pid" value="<?= $fetch_products['id']; ?>">
          <input type="hidden" name="name" value="<?= $fetch_products['name']; ?>">
          <input type="hidden" name="price" value="<?= $fetch_products['price']; ?>">
